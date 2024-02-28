@@ -1,0 +1,122 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                             Power Breaker EA                                               |
+//|                                 Developed by Forex Robot Easy Team                             |
+//|                                           forexroboteasy.com                                           |
+//+------------------------------------------------------------------+
+
+// Define input parameters
+input double LotSize = 0.01;  // Initial lot size
+input double RiskPercentage = 2.0;  // Risk percentage per trade
+input double StopLossPercentage = 2.0;  // Stop loss percentage from entry price
+input double TakeProfitPercentage = 3.0;  // Take profit percentage from entry price
+
+// Define global variables
+double AccountBalance;
+double AccountMargin;
+double RiskAmount;
+double StopLossLevel;
+double TakeProfitLevel;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Calculate risk amount based on account balance and risk percentage
+   AccountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   RiskAmount = AccountBalance * RiskPercentage / 100;
+
+   // Calculate stop loss and take profit levels based on entry price
+   StopLossLevel = NormalizeDouble(Ask - ((Ask - Bid) * StopLossPercentage / 100), Digits);
+   TakeProfitLevel = NormalizeDouble(Ask + ((Ask - Bid) * TakeProfitPercentage / 100), Digits);
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Check if there is enough margin available
+   AccountMargin = AccountInfoDouble(ACCOUNT_MARGIN);
+   if (AccountMargin < MarketInfo(Symbol(), MODE_MARGINREQUIRED))
+   {
+      Print('Not enough margin available. Trading is disabled.');
+      return;
+   }
+
+   // Check if there is enough risk amount available
+   if (RiskAmount > AccountMargin)
+   {
+      Print('Not enough risk amount available. Trading is disabled.');
+      return;
+   }
+
+   // Place buy order at support level
+   double supportLevel = CalculateSupportLevel();
+   if (supportLevel > 0)
+   {
+      double entryPrice = NormalizeDouble(supportLevel + (Ask - Bid), Digits);
+      double stopLoss = NormalizeDouble(entryPrice - ((entryPrice - Ask) * StopLossPercentage / 100), Digits);
+      double takeProfit = NormalizeDouble(entryPrice + ((entryPrice - Ask) * TakeProfitPercentage / 100), Digits);
+
+      int ticket = OrderSend(Symbol(), OP_BUY, LotSize, entryPrice, 0, stopLoss, takeProfit, 'Power Breaker EA', MagicNumber, 0, Green);
+      if (ticket > 0)
+      {
+         Print('Buy order placed successfully.');
+      }
+      else
+      {
+         Print('Failed to place buy order. Error code:', GetLastError());
+      }
+   }
+
+   // Place sell order at resistance level
+   double resistanceLevel = CalculateResistanceLevel();
+   if (resistanceLevel > 0)
+   {
+      double entryPrice = NormalizeDouble(resistanceLevel - (Ask - Bid), Digits);
+      double stopLoss = NormalizeDouble(entryPrice + ((Ask - entryPrice) * StopLossPercentage / 100), Digits);
+      double takeProfit = NormalizeDouble(entryPrice - ((Ask - entryPrice) * TakeProfitPercentage / 100), Digits);
+
+      int ticket = OrderSend(Symbol(), OP_SELL, LotSize, entryPrice, 0, stopLoss, takeProfit, 'Power Breaker EA', MagicNumber, 0, Red);
+      if (ticket > 0)
+      {
+         Print('Sell order placed successfully.');
+      }
+      else
+      {
+         Print('Failed to place sell order. Error code:', GetLastError());
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Calculate support level                                          |
+//+------------------------------------------------------------------+
+double CalculateSupportLevel()
+{
+   // Add logic to calculate support level based on trend analysis
+   // ...
+   return 0;  // Replace with actual calculated support level
+}
+
+//+------------------------------------------------------------------+
+//| Calculate resistance level                                       |
+//+------------------------------------------------------------------+
+double CalculateResistanceLevel()
+{
+   // Add logic to calculate resistance level based on trend analysis
+   // ...
+   return 0;  // Replace with actual calculated resistance level
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator deinitialization function                       |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Add any necessary cleanup code here
+}
